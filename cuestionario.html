@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuestionario</title>
+</head>
+<body>
+  <h1>Cuestionario Interactivo</h1>
+  <form id="quizForm">
+    <p>Pregunta 1: ¿Cuál es la capital de Francia?</p>
+    <input type="radio" name="q1" value="correct"> París<br>
+    <input type="radio" name="q1" value="incorrect"> Londres<br>
+    <input type="radio" name="q1" value="incorrect"> Berlín<br>
+
+    <p>Pregunta 2: ¿Cuánto es 2 + 2?</p>
+    <input type="radio" name="q2" value="incorrect"> 3<br>
+    <input type="radio" name="q2" value="correct"> 4<br>
+    <input type="radio" name="q2" value="incorrect"> 5<br>
+
+    <br><br>
+    <button type="button" onclick="checkAnswers()">Enviar</button>
+  </form>
+
+  <p id="result"></p>
+
+  <script>
+    function checkAnswers() {
+      let score = 0;
+      const form = document.getElementById('quizForm');
+      const result = document.getElementById('result');
+
+      // Verificar las respuestas
+      if (form.q1.value === "correct") score++;
+      if (form.q2.value === "correct") score++;
+
+      result.innerHTML = `Tu puntuación es: ${score} de 2.`;
+    }
+  </script>
+</body>
+</html>
