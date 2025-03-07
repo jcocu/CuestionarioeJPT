@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuestionario desde Excel</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      text-align: center; 
+      background: #f4f4f9; 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .quiz-container { 
+      max-width: 600px; 
+      width: 100%;
+      padding: 20px; 
+      background: white; 
+      border-radius: 10px; 
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); 
+    }
+    .options { padding: 0; list-style: none; }
+    .options li {
+      padding: 15px;
+      background: #e9e9e9;
+      margin: 10px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      transition: background 0.3s;
+    }
+    .options li:hover {
+      background: #d6d6d6;
+    }
+    .correct { background: green !important; color: white; }
+    .incorrect { background: red !important; color: white; }
+    .hidden { display: none; }
+    button {
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    button:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+
+  <div class="quiz-container">
+    <h1>Cuestionario desde Excel</h1>
+    
+    <div id="setup-container">
+      <label for="numQuestions">¿Cuántas preguntas quieres responder? (Máximo 20):</label>
+      <input type="number" id="numQuestions" min="1" max="20" value="10">
+      <button onclick="startQuiz()">Empezar</button>
+    </div>
+
+    <div id="question-container" class="hidden"></div>
+    <ul id="options-container" class="options hidden"></ul>
+    <button id="next-button" class="hidden" onclick="nextQuestion()">Siguiente</button>
+  </div>
+
+  <script>
+    let allQuestions = [];
+    let questions = [];
+    let currentQuestionIndex = 0;
+    let totalQuestions = 10;
+
+    async function loadExcel() {
+      try {
+        const response = await fetch("cuestiones.xlsx");
+        const arrayBuffer = await response.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        allQuestions = jsonData.slice(1).map(row => ({
+          question: row[0],
+          options: [row[1], row[2], row[3]],
+          correctAnswer: row[4]
+        }));
+      } catch (error) {
+        console.error("Error al cargar el archivo Excel:", error);
+        document.getElementById("question-container").innerHTML = "Error al cargar las preguntas.";
+      }
+    }
+
+    function startQuiz() {
+      totalQuestions = parseInt(document.getElementById("numQuestions").value);
+      if (totalQuestions < 1 || totalQuestions > 20) {
+        alert("Por favor, elige entre 1 y 20 preguntas.");
+        return;
+      }
+
+      questions = shuffleArray(allQuestions).slice(0, totalQuestions);
+      currentQuestionIndex = 0;
+      document.getElementById("setup-container").classList.add("hidden");
+      showQuestion();
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function showQuestion() {
+      const question = questions[currentQuestionIndex];
+      const questionContainer = document.getElementById("question-container");
+      const optionsContainer = document.getElementById("options-container");
+      const nextButton = document.getElementById("next-button");
+
+      questionContainer.innerHTML = `<h3>${question.question}</h3>`;
+      questionContainer.classList.remove("hidden");
+      optionsContainer.innerHTML = "";
+      optionsContainer.classList.remove("hidden");
+
+      shuffleArray(question.options).forEach(option => {
+        const li = document.createElement("li");
+        li.textContent = option;
+        li.onclick = () => checkAnswer(option, question.correctAnswer, li);
+        optionsContainer.appendChild(li);
+      });
+
+      nextButton.classList.add("hidden");
+    }
+
+    function checkAnswer(selectedOption, correctAnswer, liElement) {
+      const options = liElement.parentNode.querySelectorAll("li");
+      options.forEach(option => option.style.pointerEvents = "none");
+
+      if (selectedOption === correctAnswer) {
+        liElement.classList.add("correct");
+      } else {
+        liElement.classList.add("incorrect");
+        options.forEach(opt => {
+          if (opt.textContent === correctAnswer) opt.classList.add("correct");
+        });
+      }
+
+      document.getElementById("next-button").classList.remove("hidden");
+    }
+
+    function nextQuestion() {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < questions.length) {
+        showQuestion();
+      } else {
+        alert("¡Cuestionario terminado!");
+        location.reload();
+      }
+    }
+
+    window.onload = loadExcel;
+  </script>
+
+</body>
+</html>
